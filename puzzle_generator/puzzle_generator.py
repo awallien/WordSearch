@@ -27,6 +27,16 @@ class WordSearchPuzzle:
         makes the word search puzzle board
         :return:
         """
+        def empty_board():
+            """
+            Create an empty, blank puzzle board
+            :return: the board
+            """
+            board = []
+            for _ in range(self.max_len):
+                board.append([""]*self.max_len)
+            return board
+
         def fill_board(wordlist, stack):
             """
             private function to DFS backtrack until we get a valid board with all words on it
@@ -37,8 +47,9 @@ class WordSearchPuzzle:
 
         # get dimension size of longest word and make board
         self.max_len = len(max(self.wordlist, key=len))*2
-        self.board = [[""]*self.max_len]*self.max_len
+        self.board = empty_board()
         fill_board(self.wordlist, list(self.board))
+        self.__random_filler()
 
     def __horizontal(self, word):
         print("horizontal")
@@ -48,6 +59,16 @@ class WordSearchPuzzle:
 
     def __diagonal(self, word):
         print("diagonal")
+
+    def __random_filler(self):
+        """
+        Fill the empty spots on the puzzle board with random letters
+        :return: None
+        """
+        for row in range(self.max_len):
+            for col in range(self.max_len):
+                if not self.board[row][col]:
+                    self.board[row][col] = chr(random.randrange(ord('a'),ord('z')))
 
     def output(self):
         """
