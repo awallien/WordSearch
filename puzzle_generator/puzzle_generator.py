@@ -40,25 +40,89 @@ class WordSearchPuzzle:
         def fill_board(wordlist, stack):
             """
             private function to DFS backtrack until we get a valid board with all words on it
-            :return:
+            :return: the final config board if all words can fit on the board, None otherwise
             """
             pass
 
 
         # get dimension size of longest word and make board
         self.max_len = len(max(self.wordlist, key=len))*2
-        self.board = empty_board()
-        fill_board(self.wordlist, list(self.board))
-        self.__random_filler()
+        self.board = fill_board(self.wordlist, list(empty_board()))
 
-    def __horizontal(self, word):
-        print("horizontal")
+        # a board cannot be made for this word of list
+        if not self.board:
+            print("Unable to make board with given list", file=sys.stderr)
+            exit(1)
 
-    def __vertical(self, word):
+        #self.__random_filler()
+
+    def __vertical(self, word, board, x, y):
+        """
+        Place the word vertically on the board
+        :param word: the word to put on board
+        :param board: the instance of board
+        :param x: the x coordinate
+        :param y: the y coordinate
+        :return: True if the word fits at spot; otherwise, False
+        """
         print("vertical")
 
-    def __diagonal(self, word):
+        length = len(word)
+        if y+length > self.max_len:
+            return False
+
+        # should the word be reversed?
+        if random.randint(0,1): word = word[::-1]
+
+        for k in range(length):
+            board[x][y+k] = word[k]
+
+        return True
+
+
+    def __horizontal(self, word, board, x, y):
+        """
+        Put the word horizontally on the board
+        :param word: the word to put on board
+        :param board: the instance of board
+        :param x: the x coordinate
+        :param y: the y coordinate
+        :return: True if word fits at the spot; otherwise, False
+        """
+        print("horizontal")
+
+        length = len(word)
+        if x+length > self.max_len:
+            return False
+
+        if random.randint(0,1): word = word[::-1]
+
+        for k in range(length):
+            board[x+k][y] = word[k]
+
+        return True
+
+    def __diagonal(self, word, board, x, y):
+        """
+        Put the word diagonally on the board
+        :param word: the word
+        :param board: the instance of board
+        :param x: the x coordinate to insert word
+        :param y: the y coordinate to insert word
+        :return: True if word fits on board at spot; otherwise, False
+        """
         print("diagonal")
+
+        length = len(word)
+        if x+length > self.max_len or y+length > self.max_len:
+            return False
+
+        word = word[::-1] if random.randint(0,1) else word
+
+        for k in range(length):
+            board[x+k][y+k] = word[k]
+
+        return True
 
     def __random_filler(self):
         """
