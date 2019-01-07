@@ -4,12 +4,16 @@ language:       python 3.7
 description:    generates a word search puzzle text from a given list of words
 author:         awallien
 """
-import random, sys
+import random
+import sys
+
+EMPTY_FILL = " "
 
 class WordSearchPuzzle:
     """
     The class that constructs the puzzle board and word list
     """
+
     def __init__(self, wordlist):
         """
         Constructor
@@ -22,39 +26,57 @@ class WordSearchPuzzle:
 
         self.__make_board()
 
+
     def __make_board(self):
         """
         makes the word search puzzle board
         :return:
         """
+
         def empty_board():
             """
             Create an empty, blank puzzle board
             :return: the board
             """
-            board = []
-            for _ in range(self.max_len):
-                board.append([""]*self.max_len)
-            return board
+            return [[EMPTY_FILL for i in range(self.max_len)] for j in range(self.max_len)]
 
         def fill_board(wordlist, stack):
             """
             private function to DFS backtrack until we get a valid board with all words on it
             :return: the final config board if all words can fit on the board, None otherwise
             """
-            pass
 
+            if not wordlist:
+                return stack[-1]
+
+            # for each word
+            #   get a layout: vertical, horizontal, or diagonal
+            #   get an x and y coordinate
+            for word in wordlist:
+                for layout in random.sample(range(len(self.layword)), len(self.layword)):
+                    for i in random.sample(range(self.max_len), self.max_len):
+                        for j in random.sample(range(self.max_len), self.max_len):
+                            new_config = self.layword[layout](word, stack[-1], i, j)
+                            if new_config:
+                                stack.append(new_config)
+                                if fill_board(wordlist[1:], stack):
+                                    return stack[-1]
+
+            return None
 
         # get dimension size of longest word and make board
         self.max_len = len(max(self.wordlist, key=len))*2
-        self.board = fill_board(self.wordlist, list(empty_board()))
+
+        stack = list()
+        stack.append(empty_board())
+        self.board = fill_board(self.wordlist, stack)
 
         # a board cannot be made for this word of list
         if not self.board:
             print("Unable to make board with given list", file=sys.stderr)
             exit(1)
 
-        #self.__random_filler()
+        self.__random_filler()
 
     def __vertical(self, word, board, x, y):
         """
@@ -63,22 +85,29 @@ class WordSearchPuzzle:
         :param board: the instance of board
         :param x: the x coordinate
         :param y: the y coordinate
-        :return: True if the word fits at spot; otherwise, False
+        :return: the new board if the word can fit; otherwise, None
         """
-        print("vertical")
+        # print("vertical")
 
         length = len(word)
-        if y+length > self.max_len:
-            return False
+        if y + length > self.max_len:
+            return None
+
+        # check the slots on the board starting at board[x,y]
+        # is there a letter already occupying a spot
+        for k in range(length):
+            if board[x][y + k] != EMPTY_FILL and board[x][y + k] != word[k]:
+                return None
 
         # should the word be reversed?
-        if random.randint(0,1): word = word[::-1]
+        if random.randint(0, 1):
+            word = word[::-1]
 
+        # lay the word down
         for k in range(length):
-            board[x][y+k] = word[k]
+            board[x][y + k] = word[k]
 
-        return True
-
+        return board
 
     def __horizontal(self, word, board, x, y):
         """
@@ -87,20 +116,25 @@ class WordSearchPuzzle:
         :param board: the instance of board
         :param x: the x coordinate
         :param y: the y coordinate
-        :return: True if word fits at the spot; otherwise, False
+        :return: the new board if word can fit; otherwise, None
         """
-        print("horizontal")
+        # print("horizontal")
 
         length = len(word)
-        if x+length > self.max_len:
-            return False
-
-        if random.randint(0,1): word = word[::-1]
+        if x + length > self.max_len:
+            return None
 
         for k in range(length):
-            board[x+k][y] = word[k]
+            if board[x + k][y] != EMPTY_FILL and board[x + k][y] != word[k]:
+                return None
 
-        return True
+        if random.randint(0, 1):
+            word = word[::-1]
+
+        for k in range(length):
+            board[x + k][y] = word[k]
+
+        return board
 
     def __diagonal(self, word, board, x, y):
         """
@@ -109,20 +143,24 @@ class WordSearchPuzzle:
         :param board: the instance of board
         :param x: the x coordinate to insert word
         :param y: the y coordinate to insert word
-        :return: True if word fits on board at spot; otherwise, False
+        :return: the new board if the words fits; otherwise, None
         """
-        print("diagonal")
+        # print("diagonal")
 
         length = len(word)
-        if x+length > self.max_len or y+length > self.max_len:
-            return False
-
-        word = word[::-1] if random.randint(0,1) else word
+        if x + length > self.max_len or y + length > self.max_len:
+            return None
 
         for k in range(length):
-            board[x+k][y+k] = word[k]
+            if board[x + k][y + k] != EMPTY_FILL and board[x + k][y + k] != word[k]:
+                return None
 
-        return True
+        word = word[::-1] if random.randint(0, 1) else word
+
+        for k in range(length):
+            board[x + k][y + k] = word[k]
+
+        return board
 
     def __random_filler(self):
         """
@@ -131,35 +169,43 @@ class WordSearchPuzzle:
         """
         for row in range(self.max_len):
             for col in range(self.max_len):
-                if not self.board[row][col]:
-                    self.board[row][col] = chr(random.randrange(ord('a'),ord('z')))
+                if self.board[row][col] == EMPTY_FILL:
+                    self.board[row][col] = chr(random.randrange(ord('a'), ord('z')))
 
-    def output(self):
+    def output(self,fname=""):
         """
         Writes the puzzle and list of words to a text file
         :return: None
         """
 
         # will use later, right now, testing purposes
-        #hashcode = hash(self)%(10**6)
-        #out = open("puzzle"+str(hashcode), "w")
-
-        out = open("test", "w")
+        # hashcode = hash(self)%(10**6)
+        # out = open("puzzle"+str(hashcode), "w")
+        out = ""
+        if not fname:
+            hashcode = hash(self)%(10**6)
+            if hashcode < 0:
+                hashcode *= -1
+            out = open("puzzle"+str(hashcode), "w")
+        else:
+            out = open(fname, "w")
 
         for row in range(self.max_len):
             for col in range(self.max_len):
-                if col == self.max_len-1:
-                    out.write(self.board[row][col]+"\n")
+                if col == self.max_len - 1:
+                    out.write(self.board[row][col] + "\n")
                 else:
-                    out.write(self.board[row][col]+" ")
+                    out.write(self.board[row][col] + " ")
 
         out.write("\n")
 
         for idx in range(len(self.wordlist)):
-            if idx == len(self.wordlist)-1:
+            if idx == len(self.wordlist) - 1:
                 out.write(self.wordlist[idx])
             else:
-                out.write(self.wordlist[idx]+"\n")
+                out.write(self.wordlist[idx] + "\n")
+
+
 
 if __name__ == '__main__':
     """
@@ -184,8 +230,7 @@ if __name__ == '__main__':
                 print("Reading empty file", file=sys.stderr)
 
             else:
-                WordSearchPuzzle(wordlist).output()
-
+                WordSearchPuzzle(wordlist).output("test")
 
         except IOError:
             print("Cannot open file:", sys.argv[1], file=sys.stderr)
